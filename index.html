@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <!-- META VIEWPORT LOKAL UNTUK MENCEGAH ZOOM AUTOMATIC & FIT CONTAINER -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Stok Opname - Apotek Rawat Jalan Gedung C</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Html5-QRCode Scanner CDN -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-light: #2563eb;
+      --bg-main: #f8fafc;
+    }
+    
+    /* MENCEGAH DOUBLE-TAP ZOOM & TOUCH UNWANTED GESTURES */
+    html, body {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      width: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-main);
+    }
+    
+    .desktop-nav { display: none; }
+    .mobile-nav { display: flex; }
+    
+    /* PADDING BAWAH SANGAT LUAS UNTUK SAFARI iOS HOMESCREEN AGAR TIDA KERTUTUP NAV BAR */
+    .content-area { 
+      padding-bottom: 14rem !important; 
+    }
+
+    /* SAFE AREA SAFARI PWA iOS INSET HANDLING */
+    .mobile-nav-container {
+      padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Custom Metallic Gold Badge Styling for AFP Logo */
+    .afp-logo-badge {
+      background: linear-gradient(135deg, #fef08a 0%, #f59e0b 50%, #d97706 100%);
+      color: #0f172a;
+      text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.4);
+      box-shadow: 0 4px 14px 0 rgba(245, 158, 11, 0.39), inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+      border: 2px solid #fde047;
+    }
+
+    /* Floating Center Scanner Button in Mobile Nav */
+    .center-scan-btn {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.5);
+    }
+
+    @media (min-width: 768px) {
+      .desktop-nav { display: flex; }
+      .mobile-nav { display: none; }
+      .content-area { padding-bottom: 4rem !important; }
+    }
+  </style>
+</head>
+<body class="text-slate-800 relative bg-slate-100 min-h-screen flex flex-col justify-between">
+
+  <!-- MOCK FALLBACK (LOCAL STANDALONE) -->
+  <script>
+    if (typeof google === 'undefined') {
+      window.google = {
+        script: {
+          run: {
+            withSuccessHandler: function(cb) { this._cb = cb; return this; },
+            withFailureHandler: function(f) { return this; }
+          }
+        }
+      };
+    }
+  </script>
+
+  <!-- LAYAR LOGIN AWAL (EKSKLUSIF SEBELUM MASUK APLIKASI) -->
+  <div id="loginOverlay" class="fixed inset-0 bg-blue-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all">
+    <div class="bg-white rounded-2xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-slate-100 text-center space-y-6 transform transition-all">
+      
+      <!-- LOGO AFP TEGAS & HEADER APLIKASI -->
+      <div class="flex flex-col items-center">
+        <div class="w-20 h-20 rounded-2xl afp-logo-badge font-black text-3xl flex items-center justify-center mb-3 tracking-wider transform -rotate-1">
+          AFP
+        </div>
+        <h2 class="text-xl font-extrabold text-blue-950 leading-tight tracking-tight">Apotek Rawat Jalan Gedung C</h2>
+        <p class="text-xs font-medium text-slate-500 mt-1">Sistem Stok Opname Obat (fisik)</p>
+      </div>
+
+      <!-- FORM PILIH PETUGAS -->
+      <div class="text-left space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5"><i class="fa-solid fa-user-check mr-1 text-blue-600"></i> PILIH NAMA PETUGAS *</label>
+          <select id="loginUserSelect" class="w-full bg-white border border-slate-300 text-slate-800 rounded-xl px-3 py-3 text-xs md:text-sm font-semibold focus:ring-2 focus:ring-blue-600 focus:outline-none shadow-sm">
+            <option value="">-- Memuat Daftar Petugas... --</option>
+          </select>
+        </div>
+
+        <button onclick="doLogin()" class="w-full bg-blue-800 hover:bg-blue-900 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl text-sm shadow-lg transition-all flex items-center justify-center gap-2">
+          <i class="fa-solid fa-right-to-bracket"></i> Masuk ke Aplikasi
+        </button>
+      </div>
+
+      <div class="flex justify-between items-center text-[11px] text-slate-400 border-t pt-3">
+        <span>Akses Terautentikasi</span>
+        <button onclick="openApiConfigModal()" class="text-blue-600 hover:underline font-semibold flex items-center gap-1">
+          <i class="fa-solid fa-plug text-[10px]"></i> <span id="loginApiStatusText">Setup API</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEADER UTAMA & LOGO AFP -->
+  <header class="bg-blue-900 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
+      <div class="flex items-center space-x-3 w-full md:w-auto justify-between md:justify-start">
+        
+        <!-- LOGO AFP TEGAS & SUBTITLE -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 md:w-11 md:h-11 rounded-xl afp-logo-badge font-black text-lg md:text-xl flex items-center justify-center tracking-wider shrink-0">
+            AFP
+          </div>
+          <div>
+            <h1 class="text-sm md:text-lg font-extrabold leading-tight tracking-tight">Apotek Rawat Jalan Gedung C</h1>
+            <p class="text-[11px] md:text-xs text-blue-200 font-medium">Sistem Stok Opname & Mutasi Obat</p>
+          </div>
+        </div>
+        
+        <!-- API Status Badge -->
+        <button onclick="openApiConfigModal()" id="apiStatusBtn" class="bg-amber-500 text-white text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1 font-semibold shadow shrink-0">
+          <i class="fa-solid fa-plug"></i> <span id="apiStatusText">Setup API</span>
+        </button>
+      </div>
+
+      <!-- STATUS PETUGAS TERKUNCI -->
+      <div class="bg-blue-800/80 backdrop-blur px-3 py-2 rounded-xl border border-blue-700 flex items-center space-x-3 w-full md:w-auto text-xs md:text-sm shadow-inner">
+        <div class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-blue-950 flex items-center justify-center text-amber-400 font-bold border border-amber-400/30 shrink-0">
+          <i class="fa-solid fa-user-check text-xs md:text-sm"></i>
+        </div>
+        <div class="overflow-hidden">
+          <span id="activeUserName" class="block font-bold text-white leading-tight text-xs md:text-sm truncate">-- Belum Login --</span>
+          <span id="activeUserRole" class="text-[10px] text-amber-300 font-semibold uppercase tracking-wider hidden"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DESKTOP NAV -->
+    <nav class="desktop-nav bg-blue-800 text-white border-t border-blue-700 px-4">
+      <div class="max-w-7xl mx-auto flex space-x-2">
+        <button onclick="switchTab('tab-input')" id="btn-tab-input" class="tab-btn px-4 py-3 font-medium text-sm border-b-2 border-amber-400 text-amber-300 flex items-center gap-2">
+          <i class="fa-solid fa-pen-to-square"></i> Input Stok Opname
+        </button>
+        <button onclick="switchTab('tab-verifikasi')" id="btn-tab-verifikasi" class="tab-btn px-4 py-3 font-medium text-sm border-b-2 border-transparent text-blue-100 hover:text-amber-300 flex items-center gap-2">
+          <i class="fa-solid fa-clipboard-check"></i> Verifikasi Supervisor
+        </button>
+
+        <!-- KARTU STOK NARKOPAS -->
+        <button onclick="switchTab('tab-narkopas')" id="btn-tab-narkopas" class="tab-btn px-4 py-3 font-medium text-sm border-b-2 border-transparent text-blue-100 hover:text-amber-300 flex items-center gap-2">
+          <i class="fa-solid fa-capsules text-red-400"></i> Kartu Stok Narkotika
+        </button>
+
+        <button onclick="switchTab('tab-master')" id="btn-tab-master" class="tab-btn px-4 py-3 font-medium text-sm border-b-2 border-transparent text-blue-100 hover:text-amber-300 flex items-center gap-2">
+          <i class="fa-solid fa-pills"></i> Master Obat
+        </button>
+        <button onclick="switchTab('tab-laporan')" id="btn-tab-laporan" class="tab-btn px-4 py-3 font-medium text-sm border-b-2 border-transparent text-blue-100 hover:text-amber-300 flex items-center gap-2">
+          <i class="fa-solid fa-chart-pie"></i> Laporan & Selisih
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- KONTEN UTAMA DENGAN PADDING BAWAH PWA SAFARI AGAR TIDAK TERPOTONG -->
+  <main class="max-w-7xl mx-auto p-3 md:p-4 content-area w-full grow">
+
+    <!-- TAB 1: INPUT STOK OPNAME -->
+    <section id="tab-input" class="tab-content">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        
+        <!-- Form Input Obat -->
+        <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-slate-200">
+          <h2 class="text-sm md:text-base font-bold text-blue-900 border-b pb-2 mb-4 flex items-center justify-between">
+            <span><i class="fa-solid fa-barcode text-blue-600 mr-2"></i>Entri Obat Opname</span>
+            <button type="button" onclick="openScanner()" class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 font-semibold shadow">
+              <i class="fa-solid fa-camera"></i> Scan Barcode
+            </button>
+          </h2>
+
+          <form id="formAddOpnameItem" onsubmit="addItemToOpnameList(event)" class="space-y-3.5">
+            
+            <!-- PENCARIAN OBAT CERDAS / AUTOCOMPLETE -->
+            <div class="relative">
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Cari Nama / Kode Obat *</label>
+              <div class="relative">
+                <input type="text" id="opnameObatSearchInput" onfocus="showObatSuggestions()" oninput="filterObatSuggestions(this.value)" placeholder="Cari Nama Obat" autocomplete="off" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 bg-white font-medium pr-8">
+                <button type="button" onclick="clearObatSearch()" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 text-xs font-bold">&times;</button>
+              </div>
+              <input type="hidden" id="opnameObatSelect" required>
+
+              <!-- Dropdown Suggestion Box -->
+              <div id="obatSuggestionsList" class="absolute z-50 left-0 right-0 bg-white border border-slate-300 rounded-lg shadow-xl mt-1 max-h-60 overflow-y-auto hidden">
+                <!-- Data obat terfilter akan dirender di sini via JS -->
+              </div>
+            </div>
+
+            <!-- Stok SIMRS vs SAP Info Card -->
+            <div id="stockComparisonCard" class="hidden bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs space-y-1">
+              <div class="flex justify-between"><span>Stok SIMRS:</span> <span id="infoSIMRS" class="font-bold text-blue-700">0</span></div>
+              <div class="flex justify-between"><span>Stok SAP:</span> <span id="infoSAP" class="font-bold text-indigo-700">0</span></div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Jumlah Stok Fisik (Hasil Hitung) *</label>
+              <input type="number" id="opnameStokFisik" min="0" required oninput="calculateDifferencePreview()" placeholder="0" class="w-full border rounded-lg px-3 py-2.5 text-sm font-bold text-slate-800 bg-white">
+            </div>
+
+            <!-- Calculation Preview -->
+            <div id="diffPreviewCard" class="hidden text-xs p-2 rounded border font-semibold flex justify-between">
+              <div>Selisih SIMRS: <span id="diffSIMRSVal">0</span></div>
+              <div>Selisih SAP: <span id="diffSAPVal">0</span></div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Alasan Selisih (Opsional)</label>
+              <input type="text" id="opnameAlasan" placeholder="Ketik alasan selisih jika ada..." class="w-full border rounded-lg px-3 py-2.5 text-xs md:text-sm bg-white">
+            </div>
+
+            <button type="submit" class="w-full bg-blue-700 hover:bg-blue-800 active:scale-95 text-white font-semibold py-3 px-4 rounded-lg text-xs md:text-sm shadow flex items-center justify-center gap-2">
+              <i class="fa-solid fa-plus"></i> Tambah ke Daftar Opname
+            </button>
+          </form>
+        </div>
+
+        <!-- DAFTAR DRAFT -->
+        <div class="lg:col-span-2 bg-white p-4 md:p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center border-b pb-2 mb-3">
+              <h2 class="text-sm md:text-base font-bold text-blue-900"><i class="fa-solid fa-list-check text-blue-600 mr-2"></i>Daftar Obat Di-Opname (Draft)</h2>
+              <span id="itemCountBadge" class="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded-full font-bold">0 Item</span>
+            </div>
+
+            <div class="overflow-x-auto min-h-[160px]">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-slate-100 text-slate-700 border-b">
+                    <th class="p-2">Kode / Nama Obat</th>
+                    <th class="p-2 text-center">Fisik</th>
+                    <th class="p-2 text-center">SIMRS</th>
+                    <th class="p-2 text-center">SAP</th>
+                    <th class="p-2 text-center">Selisih</th>
+                  </tr>
+                </thead>
+                <tbody id="tableDraftOpnameBody">
+                  <tr>
+                    <td colspan="5" class="text-center py-8 text-slate-400">Belum ada item ditambahkan. Masukkan form di sebelah kiri.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- AKSI DRAFT TOMBOL DI DALAM CARD (UNTUK DESKTOP) -->
+          <div class="mt-6 border-t pt-4 hidden md:flex flex-row justify-end gap-2.5">
+            <button onclick="clearDraftOpname()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-3 rounded-xl text-xs md:text-sm font-semibold flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+              <i class="fa-solid fa-trash"></i> Kosongkan
+            </button>
+            <button onclick="submitOpnameToBackend()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl text-xs md:text-sm font-semibold shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all">
+              <i class="fa-solid fa-paper-plane"></i> Kirim Ke Spreadsheet
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 2: VERIFIKASI / MASUKAN SUPERVISOR -->
+    <section id="tab-verifikasi" class="tab-content hidden">
+      <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex justify-between items-center border-b pb-3 mb-4">
+          <div>
+            <h2 class="text-sm md:text-base font-bold text-blue-900"><i class="fa-solid fa-clipboard-check text-blue-600 mr-2"></i>Verifikasi & Masukan Supervisor</h2>
+            <p class="text-[11px] text-slate-500">Supervisor dapat memberikan tanggapan / masukan catatan tanpa mengunci data secara permanen.</p>
+          </div>
+          <button onclick="loadPendingOpname()" class="bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs px-2.5 py-1.5 rounded-lg border border-blue-200 font-semibold shrink-0">
+            <i class="fa-solid fa-arrows-rotate mr-1"></i> Refresh
+          </button>
+        </div>
+
+        <div id="pendingContainer" class="space-y-4">
+          <p class="text-center py-8 text-slate-400 text-xs md:text-sm">Memuat data pengajuan opname...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: KARTU STOK NARKOTIKA & PSIKOTROPIKA -->
+    <section id="tab-narkopas" class="tab-content hidden">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        
+        <!-- Form Mutasi Narkopas -->
+        <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-slate-200">
+          <h2 class="text-sm md:text-base font-bold text-red-900 border-b pb-2 mb-4 flex items-center justify-between">
+            <span><i class="fa-solid fa-prescription-bottle-medical text-red-600 mr-2"></i>Catat Mutasi Narkotika/Psiko</span>
+            <span class="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded-full font-bold">Resep Khusus</span>
+          </h2>
+
+          <form id="formNarkopasMutasi" onsubmit="submitNarkopasMutasi(event)" class="space-y-3.5">
+            
+            <!-- PENCARIAN OBAT NARKOPAS AUTOCOMPLETE -->
+            <div class="relative">
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Cari Nama / Kode Obat Narkotika / Psikotropika *</label>
+              <div class="relative">
+                <input type="text" id="narkopasObatSearchInput" onfocus="showNarkopasObatSuggestions()" oninput="filterNarkopasObatSuggestions(this.value)" placeholder="Cari Nama Obat" autocomplete="off" required class="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-xs md:text-sm focus:ring-2 focus:ring-red-500 bg-white font-medium pr-8">
+                <button type="button" onclick="clearNarkopasObatSearch()" class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 text-xs font-bold">&times;</button>
+              </div>
+              <input type="hidden" id="narkopasObatSelect" required>
+
+              <!-- Dropdown Suggestion Box -->
+              <div id="narkopasObatSuggestionsList" class="absolute z-50 left-0 right-0 bg-white border border-slate-300 rounded-lg shadow-xl mt-1 max-h-60 overflow-y-auto hidden">
+                <!-- Candidate items rendered via JS -->
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Jenis Mutasi *</label>
+                <select id="narkopasJenis" required class="w-full border rounded-lg px-2.5 py-2 text-xs bg-white font-bold">
+                  <option value="Masuk">Masuk</option>
+                  <option value="Keluar">Keluar</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Jumlah (Qty) *</label>
+                <input type="number" id="narkopasJumlah" min="1" required placeholder="1" class="w-full border rounded-lg px-2.5 py-2 text-xs font-bold text-slate-800 bg-white">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">No. Registrasi / Nama Pasien *</label>
+              <input type="text" id="narkopasNoRegPasien" required placeholder=" " class="w-full border rounded-lg px-3 py-2 text-xs bg-white">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Keterangan Tambahan (Opsional)</label>
+              <input type="text" id="narkopasKet" placeholder=" " class="w-full border rounded-lg px-3 py-2 text-xs bg-white">
+            </div>
+
+            <button type="submit" class="w-full bg-red-700 hover:bg-red-800 active:scale-95 text-white font-semibold py-3 px-4 rounded-lg text-xs md:text-sm shadow flex items-center justify-center gap-2">
+              <i class="fa-solid fa-floppy-disk"></i> Simpan
+            </button>
+          </form>
+        </div>
+
+        <!-- Tabel Riwayat Mutasi Kartu Stok -->
+        <div class="lg:col-span-2 bg-white p-4 md:p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between">
+          <div>
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-3 gap-2">
+              <h2 class="text-sm md:text-base font-bold text-red-950"><i class="fa-solid fa-list-ol text-red-600 mr-2"></i>Riwayat Kartu Stok Narkotika dan Psikotropika</h2>
+              <button onclick="loadNarkopasMutasi()" class="bg-red-50 hover:bg-red-100 text-red-700 text-xs px-2.5 py-1 rounded-lg border border-red-200 font-semibold shrink-0">
+                <i class="fa-solid fa-arrows-rotate mr-1"></i> Refresh
+              </button>
+            </div>
+
+            <div class="overflow-x-auto min-h-[200px]">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-red-50 text-red-900 border-b">
+                    <th class="p-2">Waktu</th>
+                    <th class="p-2">Nama Obat</th>
+                    <th class="p-2 text-center">Masuk</th>
+                    <th class="p-2 text-center">Keluar</th>
+                    <th class="p-2 text-center">Sisa</th>
+                    <th class="p-2">Nomor Registrasi / Pasien</th>
+                  </tr>
+                </thead>
+                <tbody id="narkopasTableBody">
+                  <tr>
+                    <td colspan="6" class="text-center py-8 text-slate-400">Memuat data mutasi kartu stok...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 4: MASTER OBAT (4 KOLOM) -->
+    <section id="tab-master" class="tab-content hidden">
+      <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b pb-3 mb-4">
+          <div>
+            <h2 class="text-sm md:text-base font-bold text-blue-900"><i class="fa-solid fa-pills text-blue-600 mr-2"></i>Master Obat Apotek Rawat Jalan</h2>
+            <p class="text-[11px] text-slate-500">Database obat, stok sistem SIMRS, dan stok SAP.</p>
+          </div>
+          <div class="flex gap-2 w-full md:w-auto">
+            <input type="text" id="searchMasterInput" onkeyup="filterMasterTable()" placeholder="Cari nama/kode obat..." class="border rounded-lg px-3 py-1.5 text-xs w-full md:w-60">
+            <button onclick="openModalMasterObat()" class="bg-blue-700 hover:bg-blue-800 text-white text-xs px-3 py-1.5 rounded-lg font-semibold shrink-0">
+              <i class="fa-solid fa-plus mr-1"></i> Tambah Obat
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-100 text-slate-700 border-b">
+                <th class="p-2.5">ID / Kode Obat</th>
+                <th class="p-2.5">Nama Obat</th>
+                <th class="p-2.5 text-center">Stok SIMRS</th>
+                <th class="p-2.5 text-center">Stok SAP</th>
+              </tr>
+            </thead>
+            <tbody id="masterObatTableBody">
+              <tr><td colspan="4" class="text-center py-6 text-slate-400">Memuat Master Obat...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: LAPORAN & SELISIH STOK -->
+    <section id="tab-laporan" class="tab-content hidden">
+      <div class="space-y-4 md:space-y-6">
+        
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+          <div class="bg-white p-3.5 md:p-4 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-xs text-slate-500 font-semibold">Total Item Di-Opname</p>
+            <h3 id="statTotalItems" class="text-lg md:text-xl font-extrabold text-blue-900 mt-0.5">0</h3>
+          </div>
+          <div class="bg-white p-3.5 md:p-4 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-xs text-slate-500 font-semibold">Total Selisih Stok SIMRS</p>
+            <h3 id="statSelisihSIMRS" class="text-lg md:text-xl font-extrabold text-amber-600 mt-0.5">0 Stok</h3>
+          </div>
+          <div class="bg-white p-3.5 md:p-4 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-xs text-slate-500 font-semibold">Total Selisih Stok SAP</p>
+            <h3 id="statSelisihSAP" class="text-lg md:text-xl font-extrabold text-indigo-600 mt-0.5">0 Stok</h3>
+          </div>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="bg-white p-4 md:p-5 rounded-xl border border-slate-200 shadow-sm">
+          <h3 class="text-xs md:text-sm font-bold text-slate-800 mb-3"><i class="fa-solid fa-chart-column mr-2 text-blue-600"></i>Top 5 Obat dengan Selisih Stok Terbesar (Stok)</h3>
+          <div class="h-52 md:h-64">
+            <canvas id="laporanChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Tabel Laporan Komparatif -->
+        <div class="bg-white p-4 md:p-5 rounded-xl border border-slate-200 shadow-sm">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b pb-3 mb-4">
+            <h3 class="text-sm md:text-base font-bold text-blue-900"><i class="fa-solid fa-table mr-2 text-blue-600"></i>Detail Selisih Stok (Fisik - SIMRS - SAP)</h3>
+            <div class="flex gap-2 w-full md:w-auto">
+              <button onclick="exportLaporanToCSV()" class="w-1/2 md:w-auto bg-emerald-700 text-white text-xs px-3 py-2 rounded-lg font-semibold text-center">
+                <i class="fa-solid fa-file-excel mr-1"></i> Export Excel
+              </button>
+              <button onclick="window.print()" class="w-1/2 md:w-auto bg-slate-700 text-white text-xs px-3 py-2 rounded-lg font-semibold text-center">
+                <i class="fa-solid fa-print mr-1"></i> Cetak PDF
+              </button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-100 text-slate-700 border-b">
+                  <th class="p-2">ID / Tanggal</th>
+                  <th class="p-2">Obat</th>
+                  <th class="p-2 text-center">Fisik</th>
+                  <th class="p-2 text-center">SIMRS</th>
+                  <th class="p-2 text-center">SAP</th>
+                  <th class="p-2 text-center">Selisih SIMRS</th>
+                  <th class="p-2 text-center">Selisih SAP</th>
+                  <th class="p-2">Alasan</th>
+                </tr>
+              </thead>
+              <tbody id="laporanTableBody">
+                <tr><td colspan="8" class="text-center py-6 text-slate-400">Memuat Laporan...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MOBILE BOTTOM BAR UNTUK TOMBOL DRAFT OPNAME (HANYA DITAMPILKAN KHUSUS DI HP SAAT ADA ITEM DRAFT) -->
+  <div id="mobileDraftActionBar" class="fixed bottom-14 left-0 right-0 bg-white/95 backdrop-blur border-t border-slate-200 p-2.5 z-30 flex md:hidden justify-between items-center gap-2 shadow-lg">
+    <button onclick="clearDraftOpname()" class="w-1/3 bg-slate-200 hover:bg-slate-300 active:scale-95 text-slate-700 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1">
+      <i class="fa-solid fa-trash"></i> Kosongkan
+    </button>
+    <button onclick="submitOpnameToBackend()" class="w-2/3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white py-2.5 rounded-xl text-xs font-bold shadow-md flex items-center justify-center gap-1.5">
+      <i class="fa-solid fa-paper-plane"></i> Kirim ke Spreadsheet
+    </button>
+  </div>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR (DENGAN TOMBOL SCANNER MELAYANG DI TENGAH NAVIGASI) -->
+  <nav class="mobile-nav mobile-nav-container fixed bottom-0 left-0 right-0 bg-blue-900 text-white border-t border-blue-800 z-40 justify-around items-center py-1.5 shadow-2xl">
+    <button onclick="switchTab('tab-input')" id="m-btn-input" class="flex flex-col items-center text-amber-300 text-[10px] w-1/5 py-1">
+      <i class="fa-solid fa-pen-to-square text-base mb-0.5"></i> Input
+    </button>
+    <button onclick="switchTab('tab-verifikasi')" id="m-btn-verifikasi" class="flex flex-col items-center text-blue-200 text-[10px] w-1/5 py-1">
+      <i class="fa-solid fa-clipboard-check text-base mb-0.5"></i> Verifikasi
+    </button>
+    
+    <!-- TOMBOL SCANNER CENTER FLOATING BAWAH DI TENGAH NAVIGASI -->
+    <div class="relative -top-3 w-1/5 flex justify-center">
+      <button onclick="openScanner()" class="center-scan-btn w-12 h-12 rounded-full flex flex-col items-center justify-center text-white p-2.5 border-4 border-slate-100 shadow-xl active:scale-90 transition-all">
+        <i class="fa-solid fa-camera text-base"></i>
+      </button>
+    </div>
+
+    <button onclick="switchTab('tab-narkopas')" id="m-btn-narkopas" class="flex flex-col items-center text-blue-200 text-[10px] w-1/5 py-1">
+      <i class="fa-solid fa-capsules text-base mb-0.5 text-red-300"></i> Narkopas
+    </button>
+    <button onclick="switchTab('tab-laporan')" id="m-btn-laporan" class="flex flex-col items-center text-blue-200 text-[10px] w-1/5 py-1">
+      <i class="fa-solid fa-chart-pie text-base mb-0.5"></i> Laporan
+    </button>
+  </nav>
+
+  <!-- MODAL CAMERA BARCODE SCANNER -->
+  <div id="scannerModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-xl p-4 shadow-xl">
+      <div class="flex justify-between items-center border-b pb-2 mb-3">
+        <h3 class="font-bold text-sm text-slate-800"><i class="fa-solid fa-camera mr-2 text-blue-600"></i>Scan Barcode Obat</h3>
+        <button onclick="closeScanner()" class="text-slate-400 hover:text-slate-600 font-bold text-xl px-2">&times;</button>
+      </div>
+      <div id="interactiveScanner" class="w-full h-64 bg-slate-900 rounded-lg overflow-hidden flex flex-col justify-center items-center"></div>
+      <p class="text-[11px] text-center text-slate-500 mt-3">Arahkan kamera ke barcode obat. Pemindaian berlangsung otomatis.</p>
+    </div>
+  </div>
+
+  <!-- MODAL SETTINGS API URL -->
+  <div id="apiConfigModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-xl p-5 shadow-xl">
+      <h3 class="font-bold text-base text-blue-900 border-b pb-2 mb-3"><i class="fa-solid fa-link mr-2"></i>Konfigurasi API Google Apps Script</h3>
+      <p class="text-xs text-slate-600 mb-3">Masukkan Web App URL API dari Google Apps Script untuk menghubungkan frontend ini dengan Google Sheets.</p>
+      <div class="space-y-3">
+        <input type="text" id="apiUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border rounded-lg px-3 py-2 text-xs font-mono">
+        <div class="flex justify-end gap-2">
+          <button onclick="saveApiUrl()" class="bg-blue-700 text-white text-xs px-4 py-2 rounded-lg font-semibold">Simpan & Hubungkan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL TAMBAH MASTER OBAT (4 KOLOM) -->
+  <div id="masterModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-xl p-5 shadow-xl">
+      <h3 id="modalMasterTitle" class="font-bold text-base text-blue-900 border-b pb-2 mb-4">Tambah Master Obat Baru</h3>
+      <form id="formMasterObat" onsubmit="submitMasterObat(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold mb-1">ID / Kode Obat *</label>
+          <input type="text" id="mKode" required placeholder="Contoh: OBT001" class="w-full border rounded px-2.5 py-2">
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">Nama Obat *</label>
+          <input type="text" id="mNama" required placeholder="Contoh: Paracetamol 500mg" class="w-full border rounded px-2.5 py-2">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-semibold mb-1">Stok SIMRS *</label>
+            <input type="number" id="mStokSIMRS" min="0" required placeholder="0" class="w-full border rounded px-2.5 py-2 font-bold">
+          </div>
+          <div>
+            <label class="block font-semibold mb-1">Stok SAP *</label>
+            <input type="number" id="mStokSAP" min="0" required placeholder="0" class="w-full border rounded px-2.5 py-2 font-bold">
+          </div>
+        </div>
+        <div class="flex justify-end space-x-2 pt-3 border-t">
+          <button type="button" onclick="closeModalMasterObat()" class="bg-slate-200 text-slate-700 px-3 py-2 rounded font-semibold">Batal</button>
+          <button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded font-semibold">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC UTUH & LENGKAP -->
+  <script>
+    // MOCK DATABASE & PETUGAS SENSUS
+    const mockDB = {
+      users: [
+        { id: 'USR001', nama: 'Anas Faturrahman Putra', role: 'Petugas Entri' },
+        { id: 'USR002', nama: 'Nana Sylvia', role: 'Petugas Entri' },
+        { id: 'USR003', nama: 'Irda Riskiana Syah', role: 'Petugas Entri' },
+        { id: 'USR004', nama: 'Wais S.M', role: 'Petugas Entri' },
+        { id: 'USR005', nama: 'Indy Boroallo', role: 'Petugas Entri' },
+        { id: 'USR006', nama: 'Nonik Prahartini', role: 'Petugas Entri' },
+        { id: 'USR007', nama: 'Munein', role: 'Petugas Entri' },
+        { id: 'USR008', nama: 'Erni Dwiyanti', role: 'Petugas Entri' },
+        { id: 'USR009', nama: 'Windy', role: 'Petugas Entri' },
+        { id: 'USR010', nama: 'Ashar Firman Syah', role: 'Supervisor' }
+      ],
+      masterObat: JSON.parse(localStorage.getItem('mock_masterObat_v2') || 'null') || [
+        { kode: 'OBT001', nama: 'Paracetamol 500mg Tab', stokSIMRS: 500, stokSAP: 490 },
+        { kode: 'OBT002', nama: 'Amoxicillin 500mg Kap', stokSIMRS: 300, stokSAP: 300 }
+      ],
+      masterNarkopas: JSON.parse(localStorage.getItem('mock_masterNarkopas_v2') || 'null') || [
+        { kode: 'NRK001', nama: 'Codeine 10mg Tab (Narkotika)', stokSIMRS: 100, stokSAP: 100 },
+        { kode: 'PSK001', nama: 'Alprazolam 0.5mg Tab (Psikotropika)', stokSIMRS: 80, stokSAP: 80 },
+        { kode: 'PSK002', nama: 'Diazepam 5mg Tab (Psikotropika)', stokSIMRS: 150, stokSAP: 150 }
+      ],
+      opnames: JSON.parse(localStorage.getItem('mock_opnames_v2') || 'null') || [],
+      narkopas: JSON.parse(localStorage.getItem('mock_narkopas_v2') || 'null') || []
+    };
+
+    // REST API CALLER
+    async function apiCall(action, payload = null) {
+      const apiUrl = localStorage.getItem('gas_api_url');
+      const user = activeUserObj ? activeUserObj.nama : 'Anonim';
+
+      if (!apiUrl) {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            if (action === 'getUsers') resolve(mockDB.users);
+            else if (action === 'getMasterObat') resolve(mockDB.masterObat);
+            else if (action === 'getMasterNarkopas') resolve(mockDB.masterNarkopas);
+            else if (action === 'saveMasterObat') {
+              const idx = mockDB.masterObat.findIndex(m => m.kode === payload.kode);
+              if (idx > -1) mockDB.masterObat[idx] = payload;
+              else mockDB.masterObat.push(payload);
+              localStorage.setItem('mock_masterObat_v2', JSON.stringify(mockDB.masterObat));
+              resolve(true);
+            }
+            else if (action === 'saveMasterNarkopas') {
+              const idx = mockDB.masterNarkopas.findIndex(m => m.kode === payload.kode);
+              if (idx > -1) mockDB.masterNarkopas[idx] = payload;
+              else mockDB.masterNarkopas.push(payload);
+              localStorage.setItem('mock_masterNarkopas_v2', JSON.stringify(mockDB.masterNarkopas));
+              resolve(true);
+            }
+            else if (action === 'saveStokOpname') {
+              const idOpname = 'OPN-' + new Date().toISOString().replace(/[-:T.]/g, '').slice(0, 14);
+              mockDB.opnames.push({
+                idOpname: idOpname,
+                tanggal: new Date().toISOString().slice(0, 19).replace('T', ' '),
+                petugas: user,
+                status: 'Selesai',
+                supervisor: 'Ashar Firman Syah',
+                catatan: 'Telah Ditinjau',
+                items: payload.items.map(it => ({
+                  ...it,
+                  selisihSIMRS: it.stokFisik - it.stokSIMRS,
+                  selisihSAP: it.stokFisik - it.stokSAP
+                }))
+              });
+              localStorage.setItem('mock_opnames_v2', JSON.stringify(mockDB.opnames));
+              resolve(idOpname);
+            }
+            else if (action === 'getPendingOpname') resolve(mockDB.opnames);
+            else if (action === 'getNarkopasMutasi') resolve(mockDB.narkopas);
+            else if (action === 'saveNarkopasMutasi') {
+              const idMutasi = 'NRK-' + Date.now();
+              const isKeluar = payload.jenis === 'Keluar';
+              mockDB.narkopas.unshift({
+                idMutasi: idMutasi,
+                tanggal: new Date().toISOString().slice(0, 19).replace('T', ' '),
+                kodeObat: payload.kodeObat,
+                namaObat: payload.namaObat,
+                jenis: payload.jenis,
+                jumlah: payload.jumlah,
+                masuk: !isKeluar ? payload.jumlah : '-',
+                keluar: isKeluar ? payload.jumlah : '-',
+                noRegPasien: payload.noRegPasien,
+                sisaStok: payload.sisaStok,
+                petugas: user,
+                ket: payload.ket
+              });
+              localStorage.setItem('mock_narkopas_v2', JSON.stringify(mockDB.narkopas));
+              resolve(idMutasi);
+            }
+            else if (action === 'processVerification') {
+              const targetOp = mockDB.opnames.find(o => o.idOpname === payload.idOpname);
+              if (targetOp) {
+                targetOp.status = payload.status;
+                targetOp.catatan = payload.note;
+                targetOp.supervisor = user;
+                localStorage.setItem('mock_opnames_v2', JSON.stringify(mockDB.opnames));
+              }
+              resolve(true);
+            }
+            else if (action === 'getLaporanData') {
+              const laporan = [];
+              mockDB.opnames.forEach(op => {
+                op.items.forEach(it => {
+                  laporan.push({
+                    idOpname: op.idOpname,
+                    tanggal: op.tanggal,
+                    petugas: op.petugas,
+                    statusOpname: op.status,
+                    kodeObat: it.kodeObat,
+                    namaObat: it.namaObat,
+                    stokSIMRS: it.stokSIMRS,
+                    stokSAP: it.stokSAP,
+                    stokFisik: it.stokFisik,
+                    selisihSIMRS: it.selisihSIMRS,
+                    selisihSAP: it.selisihSAP,
+                    alasan: it.alasanSelisih
+                  });
+                });
+              });
+              resolve(laporan);
+            }
+          }, 50);
+        });
+      }
+
+      try {
+        if (payload) {
+          const res = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action, payload, activeUser: user })
+          });
+          const json = await res.json();
+          if (!json.success) throw new Error(json.error || json.message);
+          return json.data !== undefined ? json.data : json;
+        } else {
+          const res = await fetch(`${apiUrl}?action=${action}`);
+          const json = await res.json();
+          if (!json.success) throw new Error(json.error || json.message);
+          return json.data;
+        }
+      } catch (err) {
+        console.error('API Call Error:', err);
+        throw err;
+      }
+    }
+
+    // STATE APLIKASI
+    let userList = [];
+    let activeUserObj = null;
+    let masterObatList = [];
+    let masterNarkopasList = [];
+    let draftOpnameList = [];
+    let html5QrcodeScanner = null;
+    let chartInstance = null;
+
+    // INISIALISASI PADA SAAT HALAMAN DIMUAT
+    document.addEventListener("DOMContentLoaded", function() {
+      checkApiStatus();
+      loadUsers();
+      loadMasterObat();
+      loadMasterNarkopas();
+      document.addEventListener('click', function(e) {
+        const wrapper = document.getElementById('obatSuggestionsList');
+        const input = document.getElementById('opnameObatSearchInput');
+        if (wrapper && !wrapper.contains(e.target) && e.target !== input) {
+          wrapper.classList.add('hidden');
+        }
+
+        const narkopasWrapper = document.getElementById('narkopasObatSuggestionsList');
+        const narkopasInput = document.getElementById('narkopasObatSearchInput');
+        if (narkopasWrapper && !narkopasWrapper.contains(e.target) && e.target !== narkopasInput) {
+          narkopasWrapper.classList.add('hidden');
+        }
+      });
+    });
+
+    function checkApiStatus() {
+      const url = localStorage.getItem('gas_api_url');
+      const btn = document.getElementById('apiStatusBtn');
+      const text = document.getElementById('apiStatusText');
+      const loginText = document.getElementById('loginApiStatusText');
+
+      if (url) {
+        btn.className = "bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1 font-semibold shadow shrink-0";
+        text.textContent = "API Terhubung";
+        if(loginText) loginText.textContent = "API Terhubung";
+      } else {
+        btn.className = "bg-amber-500 hover:bg-amber-600 text-white text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1 font-semibold shadow shrink-0";
+        text.textContent = "Local Mock DB";
+        if(loginText) loginText.textContent = "Local Mock DB";
+      }
+    }
+
+    function openApiConfigModal() {
+      document.getElementById('apiUrlInput').value = localStorage.getItem('gas_api_url') || '';
+      document.getElementById('apiConfigModal').classList.remove('hidden');
+    }
+
+    function saveApiUrl() {
+      const val = document.getElementById('apiUrlInput').value.trim();
+      if (val) localStorage.setItem('gas_api_url', val);
+      else localStorage.removeItem('gas_api_url');
+      document.getElementById('apiConfigModal').classList.add('hidden');
+      checkApiStatus();
+      loadUsers();
+      loadMasterObat();
+      Swal.fire('Tersimpan', 'URL API Google Apps Script telah diperbarui.', 'success');
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('border-amber-400', 'text-amber-300');
+        btn.classList.add('border-transparent', 'text-blue-100');
+      });
+      const activeBtn = document.getElementById('btn-' + tabId);
+      if(activeBtn) {
+        activeBtn.classList.remove('border-transparent', 'text-blue-100');
+        activeBtn.classList.add('border-amber-400', 'text-amber-300');
+      }
+
+      document.querySelectorAll('.mobile-nav button').forEach(btn => btn.classList.replace('text-amber-300', 'text-blue-200'));
+      const activeMobileBtn = document.getElementById('m-' + tabId.replace('tab-', 'btn-'));
+      if(activeMobileBtn) {
+        activeMobileBtn.classList.replace('text-blue-200', 'text-amber-300');
+      }
+
+      if (tabId === 'tab-verifikasi') loadPendingOpname();
+      if (tabId === 'tab-laporan') loadLaporanData();
+      if (tabId === 'tab-narkopas') loadNarkopasMutasi();
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // MANAJEMEN LOGIN / PETUGAS AKTIF
+    async function loadUsers() {
+      try {
+        userList = await apiCall('getUsers');
+        const loginSelect = document.getElementById('loginUserSelect');
+        loginSelect.innerHTML = '<option value="">-- Pilih Nama Petugas --</option>';
+        
+        userList.forEach(u => {
+          const opt = document.createElement('option');
+          opt.value = u.id;
+          opt.textContent = (u.role === 'Supervisor' || u.role.toLowerCase().includes('supervisor'))
+            ? `${u.nama} (Supervisor)`
+            : u.nama;
+          loginSelect.appendChild(opt);
+        });
+
+        const savedUserId = localStorage.getItem('active_user_id');
+        if (savedUserId) {
+          const found = userList.find(u => u.id === savedUserId);
+          if (found) {
+            setActiveUserSession(found);
+            hideLoginOverlay();
+          } else {
+            showLoginOverlay();
+          }
+        } else {
+          showLoginOverlay();
+        }
+      } catch (err) {
+        console.error("Gagal memuat daftar user:", err);
+        showLoginOverlay();
+      }
+    }
+
+    function showLoginOverlay() {
+      document.getElementById('loginOverlay').classList.remove('hidden');
+    }
+
+    function hideLoginOverlay() {
+      document.getElementById('loginOverlay').classList.add('hidden');
+    }
+
+    function doLogin() {
+      const selectedId = document.getElementById('loginUserSelect').value;
+      if (!selectedId) {
+        Swal.fire('Pilih Petugas', 'Silakan pilih nama petugas terlebih dahulu sebelum masuk.', 'warning');
+        return;
+      }
+
+      const user = userList.find(u => u.id === selectedId);
+      if (user) {
+        setActiveUserSession(user);
+        hideLoginOverlay();
+        Swal.fire({
+          icon: 'success',
+          title: 'Selamat Datang',
+          text: `Petugas Aktif: ${user.nama}`,
+          timer: 1500,
+          showConfirmButton: false
+        });
+      }
+    }
+
+    function setActiveUserSession(userObj) {
+      activeUserObj = userObj;
+      localStorage.setItem('active_user_id', userObj.id);
+      document.getElementById('activeUserName').textContent = userObj.nama;
+      
+      const roleEl = document.getElementById('activeUserRole');
+      if (userObj.role === 'Supervisor' || userObj.role.toLowerCase().includes('supervisor')) {
+        roleEl.textContent = '(SUPERVISOR)';
+        roleEl.classList.remove('hidden');
+      } else {
+        roleEl.textContent = '';
+        roleEl.classList.add('hidden');
+      }
+    }
+
+    // MASTER OBAT (4 KOLOM) & POPULATE SPECIAL DROPDOWNS
+    async function loadMasterObat() {
+      try {
+        masterObatList = await apiCall('getMasterObat');
+        renderMasterTable(masterObatList);
+      } catch(err) {
+        showError(err);
+      }
+    }
+
+    function renderMasterTable(data) {
+      const tbody = document.getElementById('masterObatTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-400">Tidak ada data master obat.</td></tr>';
+        return;
+      }
+      data.forEach(m => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b hover:bg-slate-50';
+        tr.innerHTML = `
+          <td class="p-2.5 font-mono font-bold text-blue-900">${m.kode}</td>
+          <td class="p-2.5 font-semibold text-slate-800">${m.nama}</td>
+          <td class="p-2.5 text-center font-bold text-blue-700">${m.stokSIMRS}</td>
+          <td class="p-2.5 text-center font-bold text-indigo-700">${m.stokSAP}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function loadMasterNarkopas() {
+      try {
+        masterNarkopasList = await apiCall('getMasterNarkopas');
+      } catch(err) {
+        console.warn('Gagal memuat master Narkopas:', err);
+      }
+    }
+
+    function clearObatSearch() {
+      document.getElementById('opnameObatSearchInput').value = '';
+      document.getElementById('opnameObatSelect').value = '';
+      document.getElementById('stockComparisonCard').classList.add('hidden');
+      document.getElementById('diffPreviewCard').classList.add('hidden');
+      document.getElementById('obatSuggestionsList').classList.add('hidden');
+    }
+
+    function filterMasterTable() {
+      const q = document.getElementById('searchMasterInput').value.toLowerCase();
+      const filtered = masterObatList.filter(m => m.kode.toLowerCase().includes(q) || m.nama.toLowerCase().includes(q));
+      renderMasterTable(filtered);
+    }
+
+    function openModalMasterObat() {
+      document.getElementById('modalMasterTitle').textContent = 'Tambah Master Obat Baru';
+      document.getElementById('formMasterObat').reset();
+      document.getElementById('mKode').readOnly = false;
+      document.getElementById('masterModal').classList.remove('hidden');
+    }
+
+    function closeModalMasterObat() {
+      document.getElementById('masterModal').classList.add('hidden');
+    }
+
+    async function submitMasterObat(e) {
+      e.preventDefault();
+      const payload = {
+        kode: document.getElementById('mKode').value.trim(),
+        nama: document.getElementById('mNama').value.trim(),
+        stokSIMRS: Number(document.getElementById('mStokSIMRS').value),
+        stokSAP: Number(document.getElementById('mStokSAP').value)
+      };
+
+      Swal.fire({ title: 'Menyimpan...', didOpen: () => Swal.showLoading() });
+      try {
+        await apiCall('saveMasterObat', payload);
+        Swal.fire('Berhasil', 'Data master obat berhasil disimpan ke Spreadsheet.', 'success');
+        closeModalMasterObat();
+        loadMasterObat();
+      } catch(err) {
+        showError(err);
+      }
+    }
+
+    // INPUT OPNAME LOGIC
+    function onSelectObatChange() {
+      const kode = document.getElementById('opnameObatSelect').value;
+      const card = document.getElementById('stockComparisonCard');
+      if(!kode) {
+        card.classList.add('hidden');
+        return;
+      }
+      const obat = masterObatList.find(m => m.kode === kode);
+      if(obat) {
+        document.getElementById('infoSIMRS').textContent = obat.stokSIMRS;
+        document.getElementById('infoSAP').textContent = obat.stokSAP;
+        card.classList.remove('hidden');
+        calculateDifferencePreview();
+      }
+    }
+
+    function calculateDifferencePreview() {
+      const kode = document.getElementById('opnameObatSelect').value;
+      const stokFisikVal = document.getElementById('opnameStokFisik').value;
+      const diffCard = document.getElementById('diffPreviewCard');
+
+      if (!kode || stokFisikVal === '') {
+        diffCard.classList.add('hidden');
+        return;
+      }
+
+      const obat = masterObatList.find(m => m.kode === kode);
+      if(!obat) return;
+
+      const fisik = Number(stokFisikVal);
+      const diffSIMRS = fisik - obat.stokSIMRS;
+      const diffSAP = fisik - obat.stokSAP;
+
+      document.getElementById('diffSIMRSVal').textContent = (diffSIMRS > 0 ? '+' : '') + diffSIMRS;
+      document.getElementById('diffSAPVal').textContent = (diffSAP > 0 ? '+' : '') + diffSAP;
+
+      diffCard.className = `p-2 rounded border font-semibold flex justify-between text-xs ${
+        diffSIMRS === 0 && diffSAP === 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'
+      }`;
+      diffCard.classList.remove('hidden');
+    }
+
+    function addItemToOpnameList(e) {
+      e.preventDefault();
+      const kode = document.getElementById('opnameObatSelect').value;
+      const stokFisik = Number(document.getElementById('opnameStokFisik').value);
+      const alasanRaw = document.getElementById('opnameAlasan').value.trim();
+      const alasan = alasanRaw !== '' ? alasanRaw : '-';
+
+      if(!kode) {
+        Swal.fire('Pilih Obat', 'Silakan pilih obat dari pencarian terlebih dahulu.', 'warning');
+        return;
+      }
+
+      if(stokFisik < 0) {
+        Swal.fire('Validasi Gagal', 'Stok fisik tidak boleh kurang dari 0', 'error');
+        return;
+      }
+
+      const obat = masterObatList.find(m => m.kode === kode);
+      if(!obat) return;
+
+      draftOpnameList.push({
+        kodeObat: obat.kode,
+        namaObat: obat.nama,
+        stokSIMRS: obat.stokSIMRS,
+        stokSAP: obat.stokSAP,
+        stokFisik: stokFisik,
+        alasanSelisih: alasan
+      });
+
+      renderDraftTable();
+      clearObatSearch();
+      document.getElementById('opnameStokFisik').value = '';
+      document.getElementById('opnameAlasan').value = '';
+    }
+
+    function renderDraftTable() {
+      const tbody = document.getElementById('tableDraftOpnameBody');
+      const mobileActionBar = document.getElementById('mobileDraftActionBar');
+      
+      document.getElementById('itemCountBadge').textContent = draftOpnameList.length + ' Item';
+      tbody.innerHTML = '';
+
+      if(draftOpnameList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400">Belum ada item ditambahkan.</td></tr>';
+        if(mobileActionBar) mobileActionBar.classList.add('hidden');
+        return;
+      }
+
+      // Tampilkan sticky action bar mobile jika ada item
+      if(mobileActionBar) mobileActionBar.classList.remove('hidden');
+
+      // Hitung Frekuensi Muncul tiap Obat (Deteksi Duplicate Input / Scan > 1x)
+      const counts = {};
+      draftOpnameList.forEach(item => {
+        counts[item.kodeObat] = (counts[item.kodeObat] || 0) + 1;
+      });
+
+      draftOpnameList.forEach((item) => {
+        const selisihSIMRS = item.stokFisik - item.stokSIMRS;
+        const selisihSAP = item.stokFisik - item.stokSAP;
+        const totalCount = counts[item.kodeObat];
+        const isDuplicate = totalCount > 1;
+        
+        const tr = document.createElement('tr');
+        tr.className = `border-b hover:bg-slate-50 ${isDuplicate ? 'bg-amber-50/60' : ''}`;
+        
+        // Badge Penanda Jika Diinput > 1x
+        const duplicateBadge = isDuplicate 
+          ? `<span class="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-[10px] font-extrabold px-1.5 py-0.5 rounded-md border border-amber-300 shadow-sm ml-1.5"><i class="fa-solid fa-copy text-[9px]"></i> Diinput ${totalCount}x</span>`
+          : '';
+
+        tr.innerHTML = `
+          <td class="p-2">
+            <div class="font-bold text-slate-800 flex items-center flex-wrap">${item.namaObat} ${duplicateBadge}</div>
+            <div class="text-[10px] text-slate-400 font-mono">${item.kodeObat}</div>
+          </td>
+          <td class="p-2 text-center font-bold text-slate-800">${item.stokFisik}</td>
+          <td class="p-2 text-center text-blue-700">${item.stokSIMRS}</td>
+          <td class="p-2 text-center text-indigo-700">${item.stokSAP}</td>
+          <td class="p-2 text-center">
+            <span class="text-[10px] block ${selisihSIMRS !== 0 ? 'text-amber-600 font-bold' : 'text-slate-400'}">SIMRS: ${selisihSIMRS}</span>
+            <span class="text-[10px] block ${selisihSAP !== 0 ? 'text-indigo-600 font-bold' : 'text-slate-400'}">SAP: ${selisihSAP}</span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function clearDraftOpname() {
+      draftOpnameList = [];
+      renderDraftTable();
+    }
+
+    async function submitOpnameToBackend() {
+      if (!draftOpnameList || draftOpnameList.length === 0) {
+        Swal.fire('Draft Kosong', 'Tidak ada obat dalam daftar opname.', 'warning');
+        return;
+      }
+      if (!activeUserObj) {
+        showLoginOverlay();
+        return;
+      }
+
+      Swal.fire({
+        title: 'Kirim Stok Opname?',
+        text: `Menyimpan ${draftOpnameList.length} item ke Google Sheets.`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Kirim'
+      }).then(async (res) => {
+        if (res.isConfirmed) {
+          Swal.fire({ title: 'Menyimpan...', didOpen: () => Swal.showLoading() });
+          try {
+            await apiCall('saveStokOpname', { items: draftOpnameList });
+            Swal.fire('Berhasil', 'Data Stok Opname berhasil disimpan.', 'success');
+            draftOpnameList = [];
+            renderDraftTable();
+          } catch (err) {
+            showError(err);
+          }
+        }
+      });
+    }
+
+    // AUTOCOMPLETE PENCARIAN OBAT STOK OPNAME
+    function showObatSuggestions() {
+      const q = document.getElementById('opnameObatSearchInput').value.trim();
+      filterObatSuggestions(q);
+      document.getElementById('obatSuggestionsList').classList.remove('hidden');
+    }
+
+    function filterObatSuggestions(query) {
+      const list = document.getElementById('obatSuggestionsList');
+      const q = query.toLowerCase();
+      const filtered = masterObatList.filter(m => 
+        m.kode.toLowerCase().includes(q) || m.nama.toLowerCase().includes(q)
+      ).slice(0, 15);
+
+      if (filtered.length === 0) {
+        list.innerHTML = '<div class="p-3 text-xs text-slate-400 text-center">Obat tidak ditemukan</div>';
+        list.classList.remove('hidden');
+        return;
+      }
+
+      list.innerHTML = filtered.map(m => `
+        <div onclick="selectObatFromSuggestion('${m.kode}')" class="p-2.5 hover:bg-blue-50 border-b last:border-0 cursor-pointer text-xs flex justify-between items-center transition-colors">
+          <div>
+            <div class="font-bold text-slate-800">${m.nama}</div>
+            <div class="text-[10px] text-blue-700 font-mono">${m.kode}</div>
+          </div>
+          <div class="text-[10px] text-slate-400 text-right">
+            <div>SIMRS: <strong>${m.stokSIMRS}</strong></div>
+            <div>SAP: <strong>${m.stokSAP}</strong></div>
+          </div>
+        </div>
+      `).join('');
+      list.classList.remove('hidden');
+    }
+
+    function selectObatFromSuggestion(kode) {
+      const obat = masterObatList.find(m => m.kode === kode);
+      if (obat) {
+        document.getElementById('opnameObatSearchInput').value = `${obat.kode} - ${obat.nama}`;
+        document.getElementById('opnameObatSelect').value = obat.kode;
+        document.getElementById('obatSuggestionsList').classList.add('hidden');
+        onSelectObatChange();
+      }
+    }
+
+    // AUTOCOMPLETE PENCARIAN OBAT NARKOPAS (MENGGUNAKAN SHEET KHUSUS MASTERNARKOPAS)
+    function showNarkopasObatSuggestions() {
+      const q = document.getElementById('narkopasObatSearchInput').value.trim();
+      filterNarkopasObatSuggestions(q);
+      document.getElementById('narkopasObatSuggestionsList').classList.remove('hidden');
+    }
+
+    function filterNarkopasObatSuggestions(query) {
+      const list = document.getElementById('narkopasObatSuggestionsList');
+      const q = query.toLowerCase();
+      
+      const dataSource = (masterNarkopasList && masterNarkopasList.length > 0) ? masterNarkopasList : masterObatList;
+      const filtered = dataSource.filter(m => 
+        m.kode.toLowerCase().includes(q) || m.nama.toLowerCase().includes(q)
+      ).slice(0, 15);
+
+      if(filtered.length === 0) {
+        list.innerHTML = '<div class="p-3 text-xs text-slate-400 text-center">Obat Narkopas tidak ditemukan</div>';
+        list.classList.remove('hidden');
+        return;
+      }
+
+      list.innerHTML = filtered.map(m => `
+        <div onclick="selectNarkopasObatFromSuggestion('${m.kode}')" class="p-2.5 hover:bg-red-50 border-b last:border-0 cursor-pointer text-xs flex justify-between items-center transition-colors">
+          <div>
+            <div class="font-bold text-slate-800">${m.nama}</div>
+            <div class="text-[10px] text-red-700 font-mono">${m.kode}</div>
+          </div>
+          <div class="text-[10px] text-slate-400 text-right">
+            <div>Stok SIMRS: <strong>${m.stokSIMRS}</strong></div>
+          </div>
+        </div>
+      `).join('');
+      list.classList.remove('hidden');
+    }
+
+    function selectNarkopasObatFromSuggestion(kode) {
+      const dataSource = (masterNarkopasList && masterNarkopasList.length > 0) ? masterNarkopasList : masterObatList;
+      const obat = dataSource.find(m => m.kode === kode);
+      if(obat) {
+        document.getElementById('narkopasObatSearchInput').value = `${obat.kode} - ${obat.nama}`;
+        document.getElementById('narkopasObatSelect').value = obat.kode;
+        document.getElementById('narkopasObatSuggestionsList').classList.add('hidden');
+      }
+    }
+
+    function clearNarkopasObatSearch() {
+      document.getElementById('narkopasObatSearchInput').value = '';
+      document.getElementById('narkopasObatSelect').value = '';
+      document.getElementById('narkopasObatSuggestionsList').classList.add('hidden');
+    }
+
+    async function loadNarkopasMutasi() {
+      const tbody = document.getElementById('narkopasTableBody');
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-slate-400">Memuat mutasi kartu stok...</td></tr>';
+      
+      try {
+        const list = await apiCall('getNarkopasMutasi');
+        if(list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-slate-400">Belum ada catatan mutasi Narkotika / Psikotropika.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = '';
+        list.forEach(r => {
+          const tr = document.createElement('tr');
+          tr.className = "border-b hover:bg-red-50/50";
+          const isKeluar = r.jenis === 'Keluar';
+          const masukVal = r.masuk !== undefined ? r.masuk : (isKeluar ? '-' : r.jumlah);
+          const keluarVal = r.keluar !== undefined ? r.keluar : (isKeluar ? r.jumlah : '-');
+
+          tr.innerHTML = `
+            <td class="p-2">
+              <div class="font-bold text-slate-800">${r.idMutasi}</div>
+              <div class="text-[10px] text-slate-400">${r.tanggal}</div>
+            </td>
+            <td class="p-2 font-semibold text-slate-800">${r.namaObat}</td>
+            <td class="p-2 text-center font-bold text-emerald-600">${masukVal !== '-' ? '+' + masukVal : '-'}</td>
+            <td class="p-2 text-center font-bold text-red-600">${keluarVal !== '-' ? '-' + keluarVal : '-'}</td>
+            <td class="p-2 text-center font-bold text-slate-800">${r.sisaStok}</td>
+            <td class="p-2">
+              <div class="font-bold text-slate-700">${r.noRegPasien}</div>
+              <div class="text-[10px] text-slate-400">Petugas: ${r.petugas} ${r.ket && r.ket !== '-' ? ' | ' + r.ket : ''}</div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch(err) {
+        showError(err);
+      }
+    }
+
+    async function submitNarkopasMutasi(e) {
+      e.preventDefault();
+      const kode = document.getElementById('narkopasObatSelect').value;
+      const jenis = document.getElementById('narkopasJenis').value;
+      const jumlah = Number(document.getElementById('narkopasJumlah').value);
+      const noRegPasien = document.getElementById('narkopasNoRegPasien').value.trim();
+      const ket = document.getElementById('narkopasKet').value.trim();
+
+      if(!kode) {
+        Swal.fire('Pilih Obat', 'Silakan pilih obat Narkotika/Psikotropika dari hasil pencarian.', 'warning');
+        return;
+      }
+
+      const obat = masterObatList.find(m => m.kode === kode);
+      if(!obat) return;
+
+      const isKeluar = jenis === 'Keluar';
+      const sisaStok = isKeluar ? (obat.stokSIMRS - jumlah) : (obat.stokSIMRS + jumlah);
+
+      const payload = {
+        kodeObat: obat.kode,
+        namaObat: obat.nama,
+        jenis: jenis,
+        jumlah: jumlah,
+        noRegPasien: noRegPasien,
+        sisaStok: sisaStok,
+        ket: ket
+      };
+
+      Swal.fire({ title: 'Menyimpan Mutasi...', didOpen: () => Swal.showLoading() });
+      try {
+        await apiCall('saveNarkopasMutasi', payload);
+        Swal.fire('Berhasil', 'Mutasi Kartu Stok berhasil disimpan.', 'success');
+        document.getElementById('formNarkopasMutasi').reset();
+        clearNarkopasObatSearch();
+        loadNarkopasMutasi();
+        loadMasterObat();
+      } catch(err) {
+        showError(err);
+      }
+    }
+
+    // VERIFIKASI SUPERVISOR / MEMBERI MASUKAN
+    async function loadPendingOpname() {
+      const container = document.getElementById('pendingContainer');
+      container.innerHTML = '<p class="text-center py-6 text-slate-400 text-xs md:text-sm">Memuat data pengajuan opname...</p>';
+
+      try {
+        const list = await apiCall('getPendingOpname');
+        if(list.length === 0) {
+          container.innerHTML = '<div class="text-center py-10 bg-slate-50 rounded-xl"><i class="fa-solid fa-circle-check text-4xl text-emerald-500 mb-2"></i><p class="text-xs md:text-sm font-semibold text-slate-600">Belum ada pengajuan opname saat ini.</p></div>';
+          return;
+        }
+
+        container.innerHTML = '';
+        list.forEach(op => {
+          const card = document.createElement('div');
+          card.className = "border rounded-xl p-3 md:p-4 bg-slate-50 space-y-3";
+          card.innerHTML = `
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 gap-1 md:gap-2">
+              <div>
+                <span class="font-mono font-bold text-blue-900 text-xs md:text-sm">${op.idOpname}</span>
+                <span class="text-[11px] text-slate-500 ml-2"><i class="fa-regular fa-clock mr-1"></i>${op.tanggal}</span>
+              </div>
+              <div class="text-xs">
+                <span class="text-slate-600">Petugas: <strong>${op.petugas}</strong></span>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs bg-white rounded border">
+                <thead>
+                  <tr class="bg-slate-100 border-b">
+                    <th class="p-2">Kode Obat</th>
+                    <th class="p-2 text-center">Fisik</th>
+                    <th class="p-2 text-center">SIMRS</th>
+                    <th class="p-2 text-center">SAP</th>
+                    <th class="p-2 text-center">Selisih</th>
+                    <th class="p-2">Alasan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${op.items.map(it => `
+                    <tr class="border-b">
+                      <td class="p-2 font-mono">${it.kodeObat}</td>
+                      <td class="p-2 text-center font-bold text-slate-800">${it.stokFisik}</td>
+                      <td class="p-2 text-center text-blue-700">${it.stokSIMRS}</td>
+                      <td class="p-2 text-center text-indigo-700">${it.stokSAP}</td>
+                      <td class="p-2 text-center font-semibold">
+                        <span class="${it.selisihSIMRS !== 0 ? 'text-amber-600' : ''}">${it.selisihSIMRS}</span> / 
+                        <span class="${it.selisihSAP !== 0 ? 'text-indigo-600' : ''}">${it.selisihSAP}</span>
+                      </td>
+                      <td class="p-2 text-slate-500">${it.alasan}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+
+            ${op.catatan && op.catatan !== '-' ? `<div class="bg-blue-50 p-2 rounded text-xs text-blue-900 border border-blue-200"><strong>Masukan/Catatan Supervisor:</strong> ${op.catatan} (${op.supervisor})</div>` : ''}
+
+            <div class="flex flex-col md:flex-row justify-between items-stretch md:items-center pt-2 gap-2">
+              <input type="text" id="note-${op.idOpname}" placeholder="Tuliskan masukan / saran supervisor..." class="text-xs border rounded-lg px-3 py-2 w-full md:w-96">
+              <div class="flex space-x-2">
+                <button onclick="approveOpname('${op.idOpname}', 'Ditinjau')" class="w-1/2 md:w-auto bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-2 rounded-lg font-semibold shadow">
+                  <i class="fa-solid fa-comment-dots mr-1"></i> Masukan
+                </button>
+                <button onclick="approveOpname('${op.idOpname}', 'Disetujui')" class="w-1/2 md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2 rounded-lg font-semibold shadow">
+                  <i class="fa-solid fa-check mr-1"></i> Setujui
+                </button>
+              </div>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      } catch(err) {
+        showError(err);
+      }
+    }
+
+    function approveOpname(idOpname, status) {
+      if(!activeUserObj) {
+        showLoginOverlay();
+        return;
+      }
+
+      const note = document.getElementById('note-' + idOpname).value;
+      
+      Swal.fire({
+        title: status === 'Disetujui' ? 'Setujui Data Opname?' : 'Kirim Masukan Supervisor?',
+        text: 'Catatan/masukan akan tersimpan di Google Sheets.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Kirim'
+      }).then(async (res) => {
+        if(res.isConfirmed) {
+          Swal.fire({ title: 'Memproses...', didOpen: () => Swal.showLoading() });
+          try {
+            await apiCall('processVerification', { idOpname, status, note });
+            Swal.fire('Tersimpan', `Status opname ${idOpname} berhasil diperbarui.`, 'success');
+            loadPendingOpname();
+          } catch(err) {
+            showError(err);
+          }
+        }
+      });
+    }
+
+    // LAPORAN BERFOKUS PADA SELISIH STOK (QTY)
+    let laporanCacheData = [];
+    async function loadLaporanData() {
+      try {
+        laporanCacheData = await apiCall('getLaporanData');
+        renderLaporan(laporanCacheData);
+        renderChart(laporanCacheData);
+      } catch(err) {
+        showError(err);
+      }
+    }
+
+    function renderLaporan(data) {
+      const tbody = document.getElementById('laporanTableBody');
+      tbody.innerHTML = '';
+
+      let totalItems = data.length;
+      let sumSelisihSIMRS = 0;
+      let sumSelisihSAP = 0;
+
+      if(data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-6 text-slate-400">Belum ada data laporan stok opname.</td></tr>';
+        return;
+      }
+
+      data.forEach(row => {
+        sumSelisihSIMRS += Math.abs(row.selisihSIMRS || 0);
+        sumSelisihSAP += Math.abs(row.selisihSAP || 0);
+
+        const tr = document.createElement('tr');
+        tr.className = "border-b hover:bg-slate-50";
+        tr.innerHTML = `
+          <td class="p-2">
+            <div class="font-mono font-bold text-blue-900">${row.idOpname}</div>
+            <div class="text-[10px] text-slate-400">${row.tanggal}</div>
+          </td>
+          <td class="p-2">
+            <div class="font-bold">${row.namaObat}</div>
+            <div class="text-[10px] text-slate-400 font-mono">${row.kodeObat}</div>
+          </td>
+          <td class="p-2 text-center font-bold">${row.stokFisik}</td>
+          <td class="p-2 text-center text-blue-700">${row.stokSIMRS}</td>
+          <td class="p-2 text-center text-indigo-700">${row.stokSAP}</td>
+          <td class="p-2 text-center font-mono font-bold ${row.selisihSIMRS !== 0 ? 'text-amber-600' : 'text-slate-500'}">${row.selisihSIMRS > 0 ? '+' : ''}${row.selisihSIMRS || 0}</td>
+          <td class="p-2 text-center font-mono font-bold ${row.selisihSAP !== 0 ? 'text-indigo-600' : 'text-slate-500'}">${row.selisihSAP > 0 ? '+' : ''}${row.selisihSAP || 0}</td>
+          <td class="p-2 text-slate-500">${row.alasan}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('statTotalItems').textContent = totalItems;
+      document.getElementById('statSelisihSIMRS').textContent = sumSelisihSIMRS + ' Stok';
+      document.getElementById('statSelisihSAP').textContent = sumSelisihSAP + ' Stok';
+    }
+
+    function renderChart(data) {
+      const ctx = document.getElementById('laporanChart').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+
+      const sorted = [...data].sort((a, b) => Math.abs(b.selisihSIMRS || 0) - Math.abs(a.selisihSIMRS || 0)).slice(0, 5);
+
+      const labels = sorted.map(d => d.namaObat.length > 15 ? d.namaObat.slice(0,15) + '...' : d.namaObat);
+      const dataSIMRS = sorted.map(d => Math.abs(d.selisihSIMRS || 0));
+      const dataSAP = sorted.map(d => Math.abs(d.selisihSAP || 0));
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Absolut Selisih SIMRS (Stok)', data: dataSIMRS, backgroundColor: '#2563eb' },
+            { label: 'Absolut Selisih SAP (Stok)', data: dataSAP, backgroundColor: '#4f46e5' }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'top' } }
+        }
+      });
+    }
+
+    function exportLaporanToCSV() {
+      if(laporanCacheData.length === 0) {
+        Swal.fire('Peringatan', 'Tidak ada data untuk di-export.', 'warning');
+        return;
+      }
+
+      let csv = 'ID Opname,Tanggal,Petugas,Kode Obat,Nama Obat,Stok Fisik,Stok SIMRS,Stok SAP,Selisih SIMRS,Selisih SAP,Alasan\n';
+      laporanCacheData.forEach(r => {
+        csv += `"${r.idOpname}","${r.tanggal}","${r.petugas}","${r.kodeObat}","${r.namaObat}",${r.stokFisik},${r.stokSIMRS},${r.stokSAP},${r.selisihSIMRS},${r.selisihSAP},"${r.alasan}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute("download", `Laporan_Stok_Opname_GedungC_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // LIVE CAMERA SCANNER
+    function openScanner() {
+      document.getElementById('scannerModal').classList.remove('hidden');
+      if (!html5QrcodeScanner) {
+        html5QrcodeScanner = new Html5Qrcode("interactiveScanner");
+      }
+
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length > 0) {
+          let cameraId = devices[0].id;
+          const backCam = devices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('rear') || d.label.toLowerCase().includes('environment'));
+          if (backCam) cameraId = backCam.id;
+
+          html5QrcodeScanner.start(
+            cameraId,
+            { fps: 10, qrbox: { width: 250, height: 150 } },
+            onScanSuccess
+          ).catch(handleScannerError);
+        } else {
+          startFacingModeFallback();
+        }
+      }).catch(err => {
+        startFacingModeFallback();
+      });
+    }
+
+    function startFacingModeFallback() {
+      html5QrcodeScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 150 } },
+        onScanSuccess
+      ).catch(handleScannerError);
+    }
+
+    function handleScannerError(err) {
+      console.warn("Scanner camera warning:", err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Kamera Gagal Dibuka',
+        text: 'Pastikan izin kamera sudah diaktifkan di browser Anda dan situs diakses via HTTPS.',
+        confirmButtonText: 'Paham'
+      });
+    }
+
+    function onScanSuccess(decodedText) {
+      closeScanner();
+      const match = masterObatList.find(m => m.kode.toLowerCase() === decodedText.toLowerCase());
+      if(match) {
+        switchTab('tab-input');
+        selectObatFromSuggestion(match.kode);
+        Swal.fire('Terdeteksi!', `Obat: ${match.nama}`, 'success');
+      } else {
+        Swal.fire('Tidak Ditemukan', `Kode barcode '${decodedText}' tidak ada di Master Obat.`, 'error');
+      }
+    }
+
+    function closeScanner() {
+      if(html5QrcodeScanner) {
+        try {
+          html5QrcodeScanner.stop().then(() => {
+            html5QrcodeScanner.clear();
+            document.getElementById('scannerModal').classList.add('hidden');
+          }).catch(() => {
+            document.getElementById('scannerModal').classList.add('hidden');
+          });
+        } catch(e) {
+          document.getElementById('scannerModal').classList.add('hidden');
+        }
+      } else {
+        document.getElementById('scannerModal').classList.add('hidden');
+      }
+    }
+
+    function showError(err) {
+      Swal.fire('Terjadi Kesalahan', err.message || err, 'error');
+    }
+  </script>
+</body>
+</html>
